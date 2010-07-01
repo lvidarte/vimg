@@ -2,13 +2,17 @@
 # -*- coding: utf-8 -*-
 
 """ 
-    vimg - Extremely basic image viewer for shell lovers.
+    vimg - Extremely basic GTK Image Viewer for shell lovers.
 
     Author:
         Leonardo Vidarte - http://blog.calcifer.com.ar
 
     Licence:
-        BSD. Disponible en: http://www.freebsd.org/copyright/license.html
+        http://www.gnu.org/licenses/gpl.html GNU General Public License
+
+    Thanks to:
+        * Marcelo Fidel Fernández - http://www.marcelofernandez.info
+          (I took some code/ideas from him).
 
     TODO: 
         * Diferent levels of zoom
@@ -175,7 +179,7 @@ class Vimg:
         # -------------------
         self.parser = OptionParser(
             prog="vimg",
-            description="Extremely basic image viewer for shell lovers.",
+            description="Extremely basic GTK Image Viewer for shell lovers.",
             usage="%prog [OPTIONS] FILEPATH",
             version="%prog 0.0.1"
         )
@@ -367,10 +371,7 @@ class Vimg:
     # }}}
     # {{{ on_mouse_moved(self, widget, event)
     def on_mouse_moved(self, widget, event):
-        """ Callback to the mouse movement inside the viewport
-            Callback que es llamado cuando el mouse se mueve en el viewport 
-        """
-        # Ver: http://www.pygtk.org/pygtk2tutorial-es/sec-EventHandling.html
+        # @see http://www.pygtk.org/pygtk2tutorial-es/sec-EventHandling.html
         if event.is_hint:
             x, y, state = event.window.get_pointer()
         else:
@@ -498,11 +499,6 @@ class Vimg:
     # }}}
     # {{{ on_button_pressed(self, widget, event)
     def on_button_pressed(self, widget, event):
-        """ When the user presses the left mouse button, save the x and y pixel positions,
-            and change the cursor.
-            Cuando el usuario presiona el botón izquierdo, guardo los puntos x, y de 
-            origen del evento y cambio el cursor a "moviéndose".
-        """
         if event.button == 1:
             self.change_vport_cursor(gtk.gdk.Cursor(gtk.gdk.FLEUR))
             self.prevmousex = event.x_root
@@ -511,8 +507,6 @@ class Vimg:
     # }}}
     # {{{ on_button_released(self, widget, event)
     def on_button_released(self, widget, event):
-        """ When the user releases the left mouse button, set the normal cursor.
-            Cuando el usuario suelta el botón izquierdo, vuelvo el cursor al normal """
         if event.button == 1:
             self.change_vport_cursor(None)
         return True
