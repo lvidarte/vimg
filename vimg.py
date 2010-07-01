@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """ 
-    vimg - Extremely basic GTK Image Viewer for shell lovers.
+    vimg - Extremely simple GTK Image Viewer for shell lovers.
 
     Author:
         Leonardo Vidarte - http://blog.calcifer.com.ar
@@ -179,7 +179,7 @@ class Vimg:
         # -------------------
         self.parser = OptionParser(
             prog="vimg",
-            description="Extremely basic GTK Image Viewer for shell lovers.",
+            description="Extremely simple GTK Image Viewer for shell lovers.",
             usage="%prog [OPTIONS] FILEPATH",
             version="%prog 0.0.1"
         )
