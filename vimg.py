@@ -18,6 +18,7 @@
         * Diferent levels of zoom
         * Navigate mode for (only) saved images [op]
         * Simple save access (in the next available position) with key [m].
+        * Replace keys by gtk.keysyms
 """
 
 import pygtk
@@ -105,9 +106,6 @@ class Vimg:
         # Parse arguments
         # ---------------
         (options, args) = self.parse_args()
-        if len(args) == 0:
-            self.parser.print_help()
-            sys.exit(1)
 
         # ---------------
         # Get images list
@@ -200,10 +198,16 @@ class Vimg:
             type="string",
             dest="wildcard", 
             metavar="pattern",
-            help="Unix shell-style wildcards: '*.jpg'"
+            help="Unix shell-style wildcards: '*.png'"
         )
 
-        return self.parser.parse_args()
+        (options, args) = self.parser.parse_args()
+
+        if len(args) == 0:
+            self.parser.print_help()
+            sys.exit(1)
+
+        return (options, args)
     # }}}
     # {{{ get_images_list(self, filepath, recursive=None, wildcard=None)
     def get_images_list(self, filepath, recursive=None, wildcard=None):
@@ -359,15 +363,19 @@ class Vimg:
 
         return adjust
     # }}}
+    # {{{ _get_memory_key(self, keycode)
+    def _get_memory_key(self, keycode):
+        return '%s' % (keycode - 48) # 48 => decimal code to number cero (0)
+    # }}}
     # {{{ in_memory(self, index)
     def in_memory(self, index):
         return self.img_cur_index in MEMORY_KEYS.values()
     # }}}
     # {{{ get_memory_key(self, index)
     def get_memory_key(self, index):
-        for key, value in MEMORY_KEYS.items():
-            if value == index:
-                return key - 48
+        for keycode, _index in MEMORY_KEYS.items():
+            if _index == index:
+                return self._get_memory_key(keycode) 
     # }}}
     # {{{ on_mouse_moved(self, widget, event)
     def on_mouse_moved(self, widget, event):
@@ -441,12 +449,12 @@ class Vimg:
                 else:
                     MEMORY_KEYS[keycode] = self.img_cur_index
                     print "[M] quick access for %d was saved on key %s" % (
-                        self.img_cur_index, keycode - 48)
+                        self.img_cur_index, self._get_memory_key(keycode))
             # Unset
             elif MEMORY_KEYS[keycode] == self.img_cur_index:
                 MEMORY_KEYS[keycode] = None
                 print "[M] quick access for %d was unset from key %s" % (
-                    self.img_cur_index, keycode - 48)
+                    self.img_cur_index, self._get_memory_key(keycode))
             # Show previous set
             else:
                 self.show_image(MEMORY_KEYS[keycode])
