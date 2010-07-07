@@ -67,13 +67,6 @@ FULL_MODE = 1
 # ============================================================================
 # GTK STRUCTURE
 # ============================================================================
-# 1. ONLY IMAGE
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# * Window
-#   * ScrolledWindow
-#     * Viewport
-#       * EventBox
-#         * Image
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 2. IMAGE + INFO
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,30 +111,17 @@ class Vimg:
         else:
             print "%d images found." % len(self.img_paths,)
 
-        # ------
-        # Window
-        # ------
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
-        self.window.connect("delete_event", self.close_application)
-        #self.window.connect("delete_event", lambda w,e: gtk.main_quit())
-        self.window.connect('key-press-event', self.on_key_press)
+        # ------------
+        # Label (Info)
+        # ------------
+        self.label = gtk.Label()
+        #self.label.show()
 
-        # --------------
-        # ScrolledWindow
-        # --------------
-        self.scrolled_window = gtk.ScrolledWindow()
-        self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        self.window.add(self.scrolled_window)
-
-        # --------
-        # Viewport
-        # --------
-        self.viewport = gtk.Viewport()
-        self.viewport.connect('button-press-event', self.on_button_pressed)
-        self.viewport.connect('button-release-event', self.on_button_released)
-        self.viewport.connect('motion-notify-event', self.on_mouse_moved)
-        self.scrolled_window.add(self.viewport)
+        # -----
+        # Image
+        # -----
+        self.image = gtk.Image()
+        self.image.show()
 
         # --------
         # EventBox
@@ -150,24 +130,53 @@ class Vimg:
         #self.event_box.connect('button_press_event', self.destroy)
         self.event_box.modify_bg(
             gtk.STATE_NORMAL, gtk.gdk.Color(BG_COLOR, BG_COLOR, BG_COLOR))
-        self.viewport.add(self.event_box)
-
-        # -----
-        # Image
-        # -----
-        self.image = gtk.Image()
         self.event_box.add(self.image)
+        self.event_box.show()
 
-        # ------------
-        # Label (Info)
-        # ------------
-        self.label = gtk.Label()
+        # --------
+        # Viewport
+        # --------
+        self.viewport = gtk.Viewport()
+        self.viewport.connect('button-press-event', self.on_button_pressed)
+        self.viewport.connect('button-release-event', self.on_button_released)
+        self.viewport.connect('motion-notify-event', self.on_mouse_moved)
+        self.viewport.add(self.event_box)
+        self.viewport.show()
+
+        # --------------
+        # ScrolledWindow
+        # --------------
+        self.scrolled_window = gtk.ScrolledWindow()
+        self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        self.scrolled_window.add(self.viewport)
+        self.scrolled_window.show()
+
+        # ----
+        # VBox
+        # ----
+        self.vbox = gtk.VBox()
+        self.vbox.pack_start(self.scrolled_window)
+        self.vbox.pack_end(self.label, expand=False, fill=True, padding=5)
+        self.vbox.show()
+
+        # ------
+        # Window
+        # ------
+        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+        self.window.connect("delete_event", lambda *args: gtk.main_quit())
+        self.window.connect('key-press-event', self.on_key_press)
+        self.window.add(self.vbox)
+        self.window.show()
 
         # ----------------
         # Show first image
         # ----------------
         self.show_image(self.img_cur_index)
-        self.window.show_all()
+    # }}}
+    # {{{ main(self)
+    def main(self):
+        gtk.main()
     # }}}
     # {{{ parse_args(self)
     def parse_args(self):
@@ -316,9 +325,6 @@ class Vimg:
         self.set_window_title()
         self.label.set_text(self.get_image_info())
         print self.get_image_info()
-
-        #self.image.show()
-        #self.event_box.show()
     # }}}
     # {{{ get_image_info(self)
     def get_image_info(self):
@@ -466,24 +472,10 @@ class Vimg:
         # INFO
         # ====
         elif keycode == keys.I:
-            child = self.window.get_child()
-            # ---------------
-            # Info is not set
-            # ---------------
-            if type(child) == gtk.ScrolledWindow:
-                self.window.remove(child)
-                vbox = gtk.VBox()
-                vbox.pack_start(child)
-                self.label.set_text(self.get_image_info())
-                vbox.pack_end(self.label, expand=False, fill=True, padding=5)
-                self.window.add(vbox)
-                self.window.show_all()
-            # -------------------
-            # Info is already set
-            # -------------------
-            elif type(child) == gtk.VBox:
-                self.window.remove(child)
-                self.scrolled_window.reparent(self.window)
+            if self.label.flags() & gtk.VISIBLE:
+                self.label.hide()
+            else:
+                self.label.show()
         # ======
         # EDITOR
         # ======
@@ -522,14 +514,6 @@ class Vimg:
     # {{{ change_vport_cursor(self, type)
     def change_vport_cursor(self, type):
         self.viewport.window.set_cursor(type)
-    # }}}
-    # {{{ close_application(self, widget, data=None):
-    def close_application(self, widget, data=None):
-        gtk.main_quit()
-    # }}}
-    # {{{ main(self)
-    def main(self):
-        gtk.main()
     # }}}
 
 if __name__ == "__main__":
