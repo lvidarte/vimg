@@ -24,41 +24,39 @@
 import pygtk
 pygtk.require('2.0')
 import gtk
-#import gtk.keysyms as keys
-keys = gtk.keysyms
-
 from optparse import OptionParser
 import os
 import fnmatch
 import sys
-
 import glib
 
 IMAGE_FORMATS = ('png', 'jpg', 'jpeg', 'gif', 'tif')
 
-DEFAULT_WIDTH = 800 
-DEFAULT_HEIGHT = 600 
+SCREEN = gtk.gdk.Screen()
+
+DEFAULT_WIDTH = round(SCREEN.get_width() * 0.8, 0) # 80% of screen width
+DEFAULT_HEIGHT = round(SCREEN.get_height() * 0.8, 0) # 80% of screen height
 DEFAULT_MARGIN = 25
 BG_COLOR = 6000
 
 OFFSET_GRAL = 25
 MOVE_KEYS = {
-    keys.H: (-OFFSET_GRAL, 0),
-    keys.J: (0,  OFFSET_GRAL),
-    keys.K: (0, -OFFSET_GRAL),
-    keys.L: (OFFSET_GRAL, 0),
+    gtk.keysyms.H: (-OFFSET_GRAL, 0),
+    gtk.keysyms.J: (0,  OFFSET_GRAL),
+    gtk.keysyms.K: (0, -OFFSET_GRAL),
+    gtk.keysyms.L: (OFFSET_GRAL, 0),
 }
 MEMORY_KEYS = {
-    keys._0: None,
-    keys._1: None,
-    keys._2: None,
-    keys._3: None,
-    keys._4: None,
-    keys._5: None,
-    keys._6: None,
-    keys._7: None,
-    keys._8: None,
-    keys._9: None,
+    gtk.keysyms._0: None,
+    gtk.keysyms._1: None,
+    gtk.keysyms._2: None,
+    gtk.keysyms._3: None,
+    gtk.keysyms._4: None,
+    gtk.keysyms._5: None,
+    gtk.keysyms._6: None,
+    gtk.keysyms._7: None,
+    gtk.keysyms._8: None,
+    gtk.keysyms._9: None,
 }
 
 NORMAL_MODE = 0
@@ -406,8 +404,8 @@ class Vimg:
         # ===============
         # NEXT (space, j)
         # ===============
-        if (keycode == keys.space) or (self.vimg_mode == NORMAL_MODE
-                                     and keycode == keys.J):
+        if (keycode == gtk.keysyms.space) or (self.vimg_mode == NORMAL_MODE
+                                     and keycode == gtk.keysyms.J):
             if self.img_cur_index < len(self.img_paths) -1:
                 self.show_image(self.img_cur_index + 1)
             else:
@@ -415,8 +413,8 @@ class Vimg:
         # =======================
         # PREVIOUS (backspace, k)
         # =======================
-        elif (keycode == keys.P) or (self.vimg_mode == NORMAL_MODE
-                                   and keycode == keys.K):
+        elif (keycode == gtk.keysyms.P) or (self.vimg_mode == NORMAL_MODE
+                                   and keycode == gtk.keysyms.K):
             if self.img_cur_index == 0:
                 self.show_image(len(self.img_paths) - 1)
             else:
@@ -424,7 +422,7 @@ class Vimg:
         # =========
         # FULL MODE
         # =========
-        elif keycode == keys.F:
+        elif keycode == gtk.keysyms.F:
             if self.vimg_mode != FULL_MODE:
                 self.vimg_mode = FULL_MODE
                 #self.window.maximize()
@@ -471,7 +469,7 @@ class Vimg:
         # ====
         # INFO
         # ====
-        elif keycode == keys.I:
+        elif keycode == gtk.keysyms.I:
             if self.label.flags() & gtk.VISIBLE:
                 self.label.hide()
             else:
@@ -479,7 +477,7 @@ class Vimg:
         # ======
         # EDITOR
         # ======
-        elif keycode == keys.E:
+        elif keycode == gtk.keysyms.E:
             editor = os.getenv('VIMG_EDITOR')
             if editor:
                 from subprocess import call
@@ -493,7 +491,7 @@ class Vimg:
         # ========
         # QUIT (q)
         # ========
-        elif keycode == keys.Q:
+        elif keycode == gtk.keysyms.Q:
             gtk.main_quit()
             sys.exit(0)
     # }}}
