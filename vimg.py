@@ -473,7 +473,7 @@ class Vimg:
             if editor:
                 from subprocess import call
                 #self.window.iconify() # don't work!
-                retcode = call([IMAGE_EDITOR, self.img_paths[self.img_cur_index]])
+                retcode = call([editor, self.img_paths[self.img_cur_index]])
                 if retcode == 0:
                     #self.window.deiconify() # don't work!
                     self.show_image(self.img_cur_index, adjust=True)
