@@ -34,8 +34,8 @@ IMAGE_FORMATS = ('png', 'jpg', 'jpeg', 'gif', 'tif')
 
 SCREEN = gtk.gdk.Screen()
 
-DEFAULT_WIDTH = round(SCREEN.get_width() * 0.8, 0) # 80% of screen width
-DEFAULT_HEIGHT = round(SCREEN.get_height() * 0.8, 0) # 80% of screen height
+DEFAULT_WIDTH = int(SCREEN.get_width() * 0.8) # 80% of screen width
+DEFAULT_HEIGHT = int(SCREEN.get_height() * 0.8) # 80% of screen height
 DEFAULT_MARGIN = 25
 BG_COLOR = 6000
 
@@ -45,18 +45,6 @@ MOVE_KEYS = {
     gtk.keysyms.J: (0,  OFFSET_GRAL),
     gtk.keysyms.K: (0, -OFFSET_GRAL),
     gtk.keysyms.L: (OFFSET_GRAL, 0),
-}
-MEMORY_KEYS = {
-    gtk.keysyms._0: None,
-    gtk.keysyms._1: None,
-    gtk.keysyms._2: None,
-    gtk.keysyms._3: None,
-    gtk.keysyms._4: None,
-    gtk.keysyms._5: None,
-    gtk.keysyms._6: None,
-    gtk.keysyms._7: None,
-    gtk.keysyms._8: None,
-    gtk.keysyms._9: None,
 }
 
 NORMAL_MODE = 0
@@ -92,6 +80,7 @@ class Vimg:
         self.img_scaled_height = 0
         self.img_zoom = 0
         self.img_mem_indexes = []
+        self.img_mem_cur_index = -1 # memory empty
 
         # ---------------
         # Parse arguments
@@ -329,8 +318,8 @@ class Vimg:
         info = "%d. %s (%sx%s)" % (
             self.img_cur_index, self.img_paths[self.img_cur_index],
             self.img_width, self.img_height)
-        if self.in_memory(self.img_cur_index):
-            return "%s [M:%s]" % (info, self.get_memory_key(self.img_cur_index))
+        if self.img_cur_index in self.img_mem_indexes:
+            return "%s [M]" % (info,)
         else:
             return info
     # }}}
@@ -339,8 +328,8 @@ class Vimg:
         if title == None:
             title = '%s x %s (%s%%)' % (
                 self.img_width, self.img_height, self.img_zoom)
-        if self.in_memory(self.img_cur_index):
-            title = "%s [M:%s]" % (title, self.get_memory_key(self.img_cur_index))
+        if self.img_cur_index in self.img_mem_indexes:
+            title = "%s [M]" % (title,)
         self.window.set_title(title)
     # }}}
     # {{{ _move_image(self, h_offset, v_offset)
@@ -366,20 +355,6 @@ class Vimg:
             adjust.value = adjust.lower
 
         return adjust
-    # }}}
-    # {{{ _get_memory_key(self, keycode)
-    def _get_memory_key(self, keycode):
-        return '%s' % (keycode - 48) # 48 => decimal code to number cero (0)
-    # }}}
-    # {{{ in_memory(self, index)
-    def in_memory(self, index):
-        return self.img_cur_index in MEMORY_KEYS.values()
-    # }}}
-    # {{{ get_memory_key(self, index)
-    def get_memory_key(self, index):
-        for keycode, _index in MEMORY_KEYS.items():
-            if _index == index:
-                return self._get_memory_key(keycode) 
     # }}}
     # {{{ on_mouse_moved(self, widget, event)
     def on_mouse_moved(self, widget, event):
@@ -413,7 +388,7 @@ class Vimg:
         # =======================
         # PREVIOUS (backspace, k)
         # =======================
-        elif (keycode == gtk.keysyms.P) or (self.vimg_mode == NORMAL_MODE
+        elif (keycode == gtk.keysyms.BackSpace) or (self.vimg_mode == NORMAL_MODE
                                    and keycode == gtk.keysyms.K):
             if self.img_cur_index == 0:
                 self.show_image(len(self.img_paths) - 1)
@@ -440,32 +415,48 @@ class Vimg:
             offset_x, offset_y = MOVE_KEYS[keycode]
             self._move_image(offset_x, offset_y)
             return True
-        # ===========
-        # MEMORY KEYS
-        # ===========
-        elif keycode in MEMORY_KEYS.keys():
-            # Set
-            if MEMORY_KEYS[keycode] is None:
-                if self.in_memory(self.img_cur_index):
-                    print "[M] WARN the image is currently saved on key %s." % (
-                        self.get_memory_key(self.img_cur_index)
-                    )
+        # ======
+        # MEMORY
+        # ======
+        elif keycode == gtk.keysyms.M:
+            # Remove
+            if self.img_cur_index in self.img_mem_indexes:
+                index = self.img_mem_indexes.index(self.img_cur_index)
+                del self.img_mem_indexes[index]
+                if index == 0:
+                    self.img_mem_cur_index = len(self.img_mem_indexes) - 1
                 else:
-                    MEMORY_KEYS[keycode] = self.img_cur_index
-                    print "[M] quick access for %d was saved on key %s" % (
-                        self.img_cur_index, self._get_memory_key(keycode))
-            # Unset
-            elif MEMORY_KEYS[keycode] == self.img_cur_index:
-                MEMORY_KEYS[keycode] = None
-                print "[M] quick access for %d was unset from key %s" % (
-                    self.img_cur_index, self._get_memory_key(keycode))
-            # Show previous set
+                    self.img_mem_cur_index = index - 1
+                print "[M] Removed quick access for image %d." % (
+                                                    self.img_cur_index)
+            # Add
             else:
-                self.show_image(MEMORY_KEYS[keycode])
-
-            # Update window title and info
+                self.img_mem_indexes.append(self.img_cur_index)
+                self.img_mem_cur_index = len(self.img_mem_indexes) - 1
+                print "[M] Added quick access for image %d." % (
+                                                    self.img_cur_index)
+            print self.img_mem_cur_index
             self.set_window_title()
             self.label.set_text(self.get_image_info())
+        # ==============
+        # MEMORY BROWSER
+        # ==============
+        elif keycode == gtk.keysyms.O and len(self.img_mem_indexes):
+            if self.img_mem_cur_index < len(self.img_mem_indexes) -1:
+                self.img_mem_cur_index += 1
+                self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
+            else:
+                self.img_mem_cur_index = 0
+                self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
+            print self.img_mem_cur_index
+        elif keycode == gtk.keysyms.P and len(self.img_mem_indexes):
+            if self.img_mem_cur_index == 0:
+                self.img_mem_cur_index = len(self.img_mem_indexes) - 1
+                self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
+            else:
+                self.img_mem_cur_index -= 1
+                self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
+            print self.img_mem_cur_index
         # ====
         # INFO
         # ====
