@@ -16,9 +16,12 @@
 
     TODO: 
         * Diferent levels of zoom
-        * Navigate mode for (only) saved images [op]
-        * Simple save access (in the next available position) with key [m].
-        * Replace keys by gtk.keysyms
+        * Move, Copy, Delete images in memory list.
+        * No-verbose option.
+        * Navigate mode for (only) saved images [op] @done
+        * Simple save access (in the next available position) with key [m]. @done
+        * Replace keys by gtk.keysyms @done
+        * Replace environment variables by config file?
 """
 
 import pygtk
@@ -53,9 +56,6 @@ FULL_MODE = 1
 # ============================================================================
 # GTK STRUCTURE
 # ============================================================================
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 2. IMAGE + INFO
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # * Window
 #  * VBox
 #    * ScrolledWindow
@@ -93,10 +93,10 @@ class Vimg:
         self.img_paths = self.get_images_list(
             args[0], options.recursive, options.wildcard)
         if len(self.img_paths) == 0:
-            sys.stderr.write('Error: No images found.\n')
-            sys.exit(1)
+            print('No images found.')
+            sys.exit(0)
         else:
-            print "%d images found." % len(self.img_paths,)
+            print("%d images found." % len(self.img_paths,))
 
         # ------------
         # Label (Info)
@@ -134,7 +134,8 @@ class Vimg:
         # ScrolledWindow
         # --------------
         self.scrolled_window = gtk.ScrolledWindow()
-        self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        self.scrolled_window.set_policy(gtk.POLICY_AUTOMATIC,
+                                        gtk.POLICY_AUTOMATIC)
         self.scrolled_window.add(self.viewport)
         self.scrolled_window.show()
 
@@ -260,7 +261,7 @@ class Vimg:
             self.img_width = self.pixbuf.get_width()
             self.img_height = self.pixbuf.get_height()
         except glib.GError, e:
-            print "%d. %s" % (self.img_cur_index, e.message)
+            print("%d. %s" % (self.img_cur_index, e.message))
             return
 
         # ----------------------------
@@ -311,43 +312,42 @@ class Vimg:
         # ---------------------------------------
         self.set_window_title()
         self.label.set_text(self.get_image_info())
-        print self.get_image_info()
+        print(self.get_image_info())
     # }}}
     # {{{ get_image_info(self)
     def get_image_info(self):
-        info = "%d. %s (%sx%s)" % (
+        m = ' [M]' if self.img_cur_index in self.img_mem_indexes else ''
+        info = "%d. %s (%sx%s)%s" % (
             self.img_cur_index, self.img_paths[self.img_cur_index],
-            self.img_width, self.img_height)
-        if self.img_cur_index in self.img_mem_indexes:
-            return "%s [M]" % (info,)
-        else:
-            return info
+            self.img_width, self.img_height, m)
+        return info
     # }}}
     # {{{ set_window_title(self, title=None)
     def set_window_title(self, title=None):
+        m = ' [M]' if self.img_cur_index in self.img_mem_indexes else ''
         if title == None:
-            title = '%s x %s (%s%%)' % (
-                self.img_width, self.img_height, self.img_zoom)
-        if self.img_cur_index in self.img_mem_indexes:
-            title = "%s [M]" % (title,)
+            title = '%s x %s (%s%%)%s' % (
+                self.img_width, self.img_height, self.img_zoom, m)
         self.window.set_title(title)
     # }}}
-    # {{{ _move_image(self, h_offset, v_offset)
-    def _move_image(self, h_offset, v_offset):
+    # {{{ __move_image(self, h_offset, v_offset)
+    def __move_image(self, h_offset, v_offset):
         # Horizontal
         h_adjust = self.viewport.props.hadjustment
-        h_new = self._get_adjust(h_adjust, h_offset)
+        h_new = self.__get_adjust(h_adjust, h_offset)
         self.viewport.set_hadjustment(h_new)
         # Vertical
         v_adjust = self.viewport.props.vadjustment
-        v_new = self._get_adjust(v_adjust, v_offset)
+        v_new = self.__get_adjust(v_adjust, v_offset)
         self.viewport.set_vadjustment(v_new)
     # }}}
-    # {{{ _get_adjust(self, adjust, offset)
-    def _get_adjust(self, adjust, offset):
+    # {{{ __get_adjust(self, adjust, offset)
+    def __get_adjust(self, adjust, offset):
         new = adjust.value + offset
-        #print new, adjust.value, adjust.upper, adjust.lower, adjust.page_size
-        if (new >= adjust.lower) and (new <= (adjust.upper - adjust.page_size)):
+        #print(new, adjust.value, adjust.upper,
+        #            adjust.lower, adjust.page_size)
+        if (new >= adjust.lower) and (
+                new <= (adjust.upper - adjust.page_size)):
             adjust.value = new
         elif new > 0 and new > (adjust.upper - adjust.page_size):
             adjust.value = adjust.upper - adjust.page_size
@@ -367,7 +367,7 @@ class Vimg:
         if state & gtk.gdk.BUTTON1_MASK:
             offset_x = self.prevmousex - x
             offset_y = self.prevmousey - y
-            self._move_image(offset_x, offset_y)
+            self.__move_image(offset_x, offset_y)
         self.prevmousex = x
         self.prevmousey = y
     # }}}
@@ -379,8 +379,8 @@ class Vimg:
         # ===============
         # NEXT (space, j)
         # ===============
-        if (keycode == gtk.keysyms.space) or (self.vimg_mode == NORMAL_MODE
-                                     and keycode == gtk.keysyms.J):
+        if (keycode == gtk.keysyms.space) or (
+                self.vimg_mode == NORMAL_MODE and keycode == gtk.keysyms.J):
             if self.img_cur_index < len(self.img_paths) -1:
                 self.show_image(self.img_cur_index + 1)
             else:
@@ -388,8 +388,8 @@ class Vimg:
         # =======================
         # PREVIOUS (backspace, k)
         # =======================
-        elif (keycode == gtk.keysyms.BackSpace) or (self.vimg_mode == NORMAL_MODE
-                                   and keycode == gtk.keysyms.K):
+        elif (keycode == gtk.keysyms.BackSpace) or (
+                self.vimg_mode == NORMAL_MODE and keycode == gtk.keysyms.K):
             if self.img_cur_index == 0:
                 self.show_image(len(self.img_paths) - 1)
             else:
@@ -413,7 +413,7 @@ class Vimg:
         # =========
         elif keycode in MOVE_KEYS.keys():
             offset_x, offset_y = MOVE_KEYS[keycode]
-            self._move_image(offset_x, offset_y)
+            self.__move_image(offset_x, offset_y)
             return True
         # ======
         # MEMORY
@@ -427,15 +427,15 @@ class Vimg:
                     self.img_mem_cur_index = len(self.img_mem_indexes) - 1
                 else:
                     self.img_mem_cur_index = index - 1
-                print "[M] Removed quick access for image %d." % (
-                                                    self.img_cur_index)
+                print("[M] Removed quick access for image %d." % (
+                                                    self.img_cur_index))
             # Add
             else:
                 self.img_mem_indexes.append(self.img_cur_index)
                 self.img_mem_cur_index = len(self.img_mem_indexes) - 1
-                print "[M] Added quick access for image %d." % (
-                                                    self.img_cur_index)
-            print self.img_mem_cur_index
+                print("[M] Added quick access for image %d." % (
+                                                    self.img_cur_index))
+            print(self.img_mem_cur_index)
             self.set_window_title()
             self.label.set_text(self.get_image_info())
         # ==============
@@ -448,7 +448,7 @@ class Vimg:
             else:
                 self.img_mem_cur_index = 0
                 self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
-            print self.img_mem_cur_index
+            #print(self.img_mem_cur_index)
         elif keycode == gtk.keysyms.P and len(self.img_mem_indexes):
             if self.img_mem_cur_index == 0:
                 self.img_mem_cur_index = len(self.img_mem_indexes) - 1
@@ -456,7 +456,7 @@ class Vimg:
             else:
                 self.img_mem_cur_index -= 1
                 self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
-            print self.img_mem_cur_index
+            #print(self.img_mem_cur_index)
         # ====
         # INFO
         # ====
@@ -478,7 +478,7 @@ class Vimg:
                     #self.window.deiconify() # don't work!
                     self.show_image(self.img_cur_index, adjust=True)
             else:
-                print '[!] Environment variable VIMG_EDITOR is not set.'
+                print('[!] Environment variable VIMG_EDITOR is not set.')
         # ========
         # QUIT (q)
         # ========
