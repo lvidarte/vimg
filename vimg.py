@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """ 
-    vimg - Extremely simple GTK Image Viewer for shell lovers.
+    vimg - Simple GTK Image Viewer for shell lovers.
 
     Author:
         Leonardo Vidarte - http://blog.calcifer.com.ar
@@ -16,7 +16,9 @@
 
     TODO: 
         * Diferent levels of zoom
-        * Move, Copy, Delete images in memory list.
+        * Copy actual image (:cp) @done
+        * Copy images in memory (:mcp) @done
+        * Move, Delete images in memory list.
         * No-verbose option.
         * Navigate mode for (only) saved images [op] @done
         * Simple save access (in the next available position) with key [m]. @done
@@ -32,6 +34,7 @@ import os
 import fnmatch
 import sys
 import glib
+import shutil
 
 IMAGE_FORMATS = ('png', 'jpg', 'jpeg', 'gif', 'tif')
 
@@ -50,8 +53,8 @@ MOVE_KEYS = {
     gtk.keysyms.L: (OFFSET_GRAL, 0),
 }
 
-NORMAL_MODE = 0
-FULL_MODE = 1
+NORMAL_WINDOW = 0
+FULL_WINDOW = 1
 
 # ============================================================================
 # GTK STRUCTURE
@@ -62,6 +65,7 @@ FULL_MODE = 1
 #      * Viewport
 #        * EventBox
 #          * Image
+#    * Entry
 #    * Label
 # ============================================================================
 
@@ -71,7 +75,7 @@ class Vimg:
     def __init__(self):
 
         # 
-        self.vimg_mode = NORMAL_MODE
+        self.vimg_mode = NORMAL_WINDOW
         self.img_paths = []
         self.img_cur_index = 0
         self.img_width = 0
@@ -103,6 +107,12 @@ class Vimg:
         # ------------
         self.label = gtk.Label()
         #self.label.show()
+
+        # -----
+        # Entry
+        # -----
+        self.entry = gtk.Entry()
+        #self.entry.show()
 
         # -----
         # Image
@@ -145,6 +155,7 @@ class Vimg:
         self.vbox = gtk.VBox()
         self.vbox.pack_start(self.scrolled_window)
         self.vbox.pack_end(self.label, expand=False, fill=True, padding=5)
+        self.vbox.pack_end(self.entry, expand=False, fill=True, padding=5)
         self.vbox.show()
 
         # ------
@@ -174,7 +185,7 @@ class Vimg:
         # -------------------
         self.parser = OptionParser(
             prog="vimg",
-            description="Extremely simple GTK Image Viewer for shell lovers.",
+            description="Simple GTK Image Viewer for shell lovers.",
             usage="%prog [OPTIONS] FILEPATH",
             version="%prog 0.0.1"
         )
@@ -268,7 +279,7 @@ class Vimg:
         # Obtain size to display image
         # ----------------------------
         # no resize
-        if self.vimg_mode == FULL_MODE or not adjust or \
+        if self.vimg_mode == FULL_WINDOW or not adjust or \
                 (self.img_width <= DEFAULT_WIDTH
                 and self.img_height <= DEFAULT_HEIGHT):
             self.image.set_from_pixbuf(self.pixbuf)
@@ -303,9 +314,10 @@ class Vimg:
         # ----------------------------------
         # Adjust window size to actual image
         # ----------------------------------
-        if self.vimg_mode == NORMAL_MODE or adjust:
+        extra = 30 if self.label.flags() & gtk.VISIBLE else 0
+        if self.vimg_mode == NORMAL_WINDOW or adjust:
             self.window.resize(self.img_scaled_width + DEFAULT_MARGIN,
-                self.img_scaled_height + DEFAULT_MARGIN)
+                self.img_scaled_height + DEFAULT_MARGIN + extra)
 
         # ---------------------------------------
         # Set window title, info and output shell
@@ -373,118 +385,203 @@ class Vimg:
     # }}}
     # {{{ on_key_press(self, widget, event)
     def on_key_press(self, widget, event):
-        keycode = gtk.gdk.keyval_to_upper(event.keyval)
+        #keycode = gtk.gdk.keyval_to_upper(event.keyval)
+        #keycode = gtk.gdk.keyval_name(event.keyval)
+        keycode = event.keyval
+        #print keycode
         newx = newy = 0
 
-        # ===============
-        # NEXT (space, j)
-        # ===============
-        if (keycode == gtk.keysyms.space) or (
-                self.vimg_mode == NORMAL_MODE and keycode == gtk.keysyms.J):
-            if self.img_cur_index < len(self.img_paths) -1:
-                self.show_image(self.img_cur_index + 1)
-            else:
-                self.show_image(0)
-        # =======================
-        # PREVIOUS (backspace, k)
-        # =======================
-        elif (keycode == gtk.keysyms.BackSpace) or (
-                self.vimg_mode == NORMAL_MODE and keycode == gtk.keysyms.K):
-            if self.img_cur_index == 0:
-                self.show_image(len(self.img_paths) - 1)
-            else:
-                self.show_image(self.img_cur_index - 1)
-        # =========
-        # FULL MODE
-        # =========
-        elif keycode == gtk.keysyms.F:
-            if self.vimg_mode != FULL_MODE:
-                self.vimg_mode = FULL_MODE
-                #self.window.maximize()
-                self.window.fullscreen()
-                self.show_image(self.img_cur_index, adjust=False)
-            else:
-                self.vimg_mode = NORMAL_MODE
-                #self.window.unmaximize()
-                self.window.unfullscreen()
-                self.show_image(self.img_cur_index, adjust=True)
-        # =========
-        # MOVE KEYS
-        # =========
-        elif keycode in MOVE_KEYS.keys():
-            offset_x, offset_y = MOVE_KEYS[keycode]
-            self.__move_image(offset_x, offset_y)
-            return True
+        # =======
+        # Command
+        # =======
+        if self.entry.flags() & gtk.VISIBLE:
+            if keycode == gtk.keysyms.colon:
+                self.entry.set_text('')
+            if keycode == gtk.keysyms.Escape:
+                self.entry.hide()
+                self.window.set_focus(self.window)
+            if keycode == gtk.keysyms.Return:
+                self.parse_entry()
         # ======
-        # MEMORY
+        # Normal
         # ======
-        elif keycode == gtk.keysyms.M:
-            # Remove
-            if self.img_cur_index in self.img_mem_indexes:
-                index = self.img_mem_indexes.index(self.img_cur_index)
-                del self.img_mem_indexes[index]
-                if index == 0:
-                    self.img_mem_cur_index = len(self.img_mem_indexes) - 1
+        elif event.keyval == gtk.keysyms.colon:
+            self.entry.show()
+            self.window.set_focus(self.entry)
+        else:
+            # ===============
+            # NEXT (space, j)
+            # ===============
+            if (keycode == gtk.keysyms.space) or (
+                    self.vimg_mode == NORMAL_WINDOW and keycode == gtk.keysyms.j):
+                if self.img_cur_index < len(self.img_paths) -1:
+                    self.show_image(self.img_cur_index + 1)
                 else:
-                    self.img_mem_cur_index = index - 1
-                print("[M] Removed quick access for image %d." % (
-                                                    self.img_cur_index))
-            # Add
-            else:
-                self.img_mem_indexes.append(self.img_cur_index)
-                self.img_mem_cur_index = len(self.img_mem_indexes) - 1
-                print("[M] Added quick access for image %d." % (
-                                                    self.img_cur_index))
-            print(self.img_mem_cur_index)
-            self.set_window_title()
-            self.label.set_text(self.get_image_info())
-        # ==============
-        # MEMORY BROWSER
-        # ==============
-        elif keycode == gtk.keysyms.O and len(self.img_mem_indexes):
-            if self.img_mem_cur_index < len(self.img_mem_indexes) -1:
-                self.img_mem_cur_index += 1
-                self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
-            else:
-                self.img_mem_cur_index = 0
-                self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
-            #print(self.img_mem_cur_index)
-        elif keycode == gtk.keysyms.P and len(self.img_mem_indexes):
-            if self.img_mem_cur_index == 0:
-                self.img_mem_cur_index = len(self.img_mem_indexes) - 1
-                self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
-            else:
-                self.img_mem_cur_index -= 1
-                self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
-            #print(self.img_mem_cur_index)
-        # ====
-        # INFO
-        # ====
-        elif keycode == gtk.keysyms.I:
-            if self.label.flags() & gtk.VISIBLE:
-                self.label.hide()
-            else:
-                self.label.show()
-        # ======
-        # EDITOR
-        # ======
-        elif keycode == gtk.keysyms.E:
-            editor = os.getenv('VIMG_EDITOR')
-            if editor:
-                from subprocess import call
-                #self.window.iconify() # don't work!
-                retcode = call([editor, self.img_paths[self.img_cur_index]])
-                if retcode == 0:
-                    #self.window.deiconify() # don't work!
+                    self.show_image(0)
+            # =======================
+            # PREVIOUS (backspace, k)
+            # =======================
+            elif (keycode == gtk.keysyms.BackSpace) or (
+                    self.vimg_mode == NORMAL_WINDOW and keycode == gtk.keysyms.k):
+                if self.img_cur_index == 0:
+                    self.show_image(len(self.img_paths) - 1)
+                else:
+                    self.show_image(self.img_cur_index - 1)
+            # =========
+            # FULL MODE
+            # =========
+            elif keycode == gtk.keysyms.f:
+                if self.vimg_mode != FULL_WINDOW:
+                    self.vimg_mode = FULL_WINDOW
+                    #self.window.maximize()
+                    self.window.fullscreen()
+                    self.show_image(self.img_cur_index, adjust=False)
+                else:
+                    self.vimg_mode = NORMAL_WINDOW
+                    #self.window.unmaximize()
+                    self.window.unfullscreen()
                     self.show_image(self.img_cur_index, adjust=True)
-            else:
-                print('[!] Environment variable VIMG_EDITOR is not set.')
-        # ========
-        # QUIT (q)
-        # ========
-        elif keycode == gtk.keysyms.Q:
+            # =========
+            # MOVE KEYS
+            # =========
+            elif keycode in MOVE_KEYS.keys():
+                offset_x, offset_y = MOVE_KEYS[keycode]
+                self.__move_image(offset_x, offset_y)
+                return True
+            # ======
+            # MEMORY
+            # ======
+            elif keycode == gtk.keysyms.m:
+                # Remove
+                if self.img_cur_index in self.img_mem_indexes:
+                    index = self.img_mem_indexes.index(self.img_cur_index)
+                    del self.img_mem_indexes[index]
+                    if index == 0:
+                        self.img_mem_cur_index = len(self.img_mem_indexes) - 1
+                    else:
+                        self.img_mem_cur_index = index - 1
+                    print("[M] Removed quick access for image %d." % (
+                                                        self.img_cur_index))
+                # Add
+                else:
+                    self.img_mem_indexes.append(self.img_cur_index)
+                    self.img_mem_cur_index = len(self.img_mem_indexes) - 1
+                    print("[M] Added quick access for image %d." % (
+                                                        self.img_cur_index))
+                print(self.img_mem_cur_index)
+                self.set_window_title()
+                self.label.set_text(self.get_image_info())
+            # ==============
+            # MEMORY BROWSER
+            # ==============
+            elif keycode == gtk.keysyms.o and len(self.img_mem_indexes):
+                if self.img_mem_cur_index < len(self.img_mem_indexes) -1:
+                    self.img_mem_cur_index += 1
+                    self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
+                else:
+                    self.img_mem_cur_index = 0
+                    self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
+                #print(self.img_mem_cur_index)
+            elif keycode == gtk.keysyms.p and len(self.img_mem_indexes):
+                if self.img_mem_cur_index == 0:
+                    self.img_mem_cur_index = len(self.img_mem_indexes) - 1
+                    self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
+                else:
+                    self.img_mem_cur_index -= 1
+                    self.show_image(self.img_mem_indexes[self.img_mem_cur_index])
+                #print(self.img_mem_cur_index)
+            # ====
+            # INFO
+            # ====
+            elif keycode == gtk.keysyms.i:
+                if self.label.flags() & gtk.VISIBLE:
+                    self.label.hide()
+                else:
+                    self.label.show()
+            # ======
+            # EDITOR
+            # ======
+            elif keycode == gtk.keysyms.e:
+                editor = os.getenv('VIMG_EDITOR')
+                if editor:
+                    from subprocess import call
+                    #self.window.iconify() # don't work!
+                    retcode = call([editor, self.img_paths[self.img_cur_index]])
+                    if retcode == 0:
+                        #self.window.deiconify() # don't work!
+                        self.show_image(self.img_cur_index, adjust=True)
+                else:
+                    print('[!] Environment variable VIMG_EDITOR is not set.')
+            # ========
+            # QUIT (q)
+            # ========
+            elif keycode == gtk.keysyms.q:
+                gtk.main_quit()
+                sys.exit(0)
+    # }}}
+    # {{{ parse_entry(self)
+    def parse_entry(self):
+        entry = self.entry.get_text().split()
+
+        # ====
+        # Quit
+        # ====
+        if entry[0] == ':q':
             gtk.main_quit()
             sys.exit(0)
+        # ====
+        # Copy
+        # ====
+        if entry[0] == ':cp':
+            if len(entry) != 2:
+                self.entry.set_text('E02: Target directory or filepath required')
+            else:
+                try:
+                    shutil.copy2(
+                        os.path.abspath(self.img_paths[self.img_cur_index]),
+                        os.path.abspath(entry[1]))
+                except IOError as e:
+                    self.entry.set_text(e.__str__())
+                else:
+                    self.entry.set_text('OK: File copied')
+        # ========
+        # Mem Copy
+        # ========
+        elif entry[0] == ':mcp':
+            if len(self.img_mem_indexes) == 0:
+                self.entry.set_text("E04: Memory is empty (Try `m' to add)")
+            elif len(entry) != 2:
+                self.entry.set_text('E03: Target directory required')
+            elif not os.path.exists(entry[1]):
+                self.entry.set_text('E05: Target directory do not exist')
+            elif not os.path.isdir(entry[1]):
+                self.entry.set_text('E06: Target must be a directory')
+            else:
+                filenames = []
+                for index in self.img_mem_indexes:
+                    filename = os.path.basename(self.img_paths[index])
+                    if filename in filenames:
+                        self.entry.set_text(
+                            'E07: Files have same name: Abort copy')
+                        return
+                    else:
+                        filenames.append(filename)
+                for index in self.img_mem_indexes:
+                    try:
+                        shutil.copy2(
+                            os.path.abspath(self.img_paths[index]),
+                            os.path.join(os.path.abspath(entry[1]),
+                                os.path.basename(self.img_paths[index])))
+                    except IOError as e:
+                        self.entry.set_text(e.__str__())
+                        return
+                    self.entry.set_text('OK: Files copied')
+        # =======
+        # Unknown
+        # =======
+        else:
+            self.entry.set_text('E01: Command unknown')
+
     # }}}
     # {{{ on_button_pressed(self, widget, event)
     def on_button_pressed(self, widget, event):
