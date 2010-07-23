@@ -5,8 +5,6 @@ vimg: Simple GTK Image Viewer for shell lovers.
 Common use:
 -----------
 
-:: 
-
   vimg image.png              # view just image.png
   vimg ~/Images               # view all images in ~/Images
   vimg -r ~/Images            # view recursively all images in ~/Images
