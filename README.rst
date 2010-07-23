@@ -27,6 +27,7 @@ Shortcuts:
   m              add/remove image from memory list
   o              next image in memory list
   p              previous image in memory list
+  e              edit with external editor (see 'Setting external editor')
   q              quit
   :              enter to command mode
 
@@ -46,3 +47,10 @@ Shortcuts:
   :q             quit
   Esc            return to normal mode
 
+**Setting external editor**
+
+vimg uses the environment variable ``VIMG_EDITOR`` to set the external editor:
+
+::
+
+  export VIMG_EDITOR=/usr/bin/gimp
