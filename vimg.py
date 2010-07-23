@@ -47,10 +47,10 @@ BG_COLOR = 6000
 
 OFFSET_GRAL = 25
 MOVE_KEYS = {
-    gtk.keysyms.H: (-OFFSET_GRAL, 0),
-    gtk.keysyms.J: (0,  OFFSET_GRAL),
-    gtk.keysyms.K: (0, -OFFSET_GRAL),
-    gtk.keysyms.L: (OFFSET_GRAL, 0),
+    gtk.keysyms.h: (-OFFSET_GRAL, 0),
+    gtk.keysyms.j: (0,  OFFSET_GRAL),
+    gtk.keysyms.k: (0, -OFFSET_GRAL),
+    gtk.keysyms.l: (OFFSET_GRAL, 0),
 }
 
 NORMAL_WINDOW = 0
@@ -75,7 +75,7 @@ class Vimg:
     def __init__(self):
 
         # 
-        self.vimg_mode = NORMAL_WINDOW
+        self.vimg_window_state = NORMAL_WINDOW
         self.img_paths = []
         self.img_cur_index = 0
         self.img_width = 0
@@ -279,7 +279,7 @@ class Vimg:
         # Obtain size to display image
         # ----------------------------
         # no resize
-        if self.vimg_mode == FULL_WINDOW or not adjust or \
+        if self.vimg_window_state == FULL_WINDOW or not adjust or \
                 (self.img_width <= DEFAULT_WIDTH
                 and self.img_height <= DEFAULT_HEIGHT):
             self.image.set_from_pixbuf(self.pixbuf)
@@ -315,7 +315,7 @@ class Vimg:
         # Adjust window size to actual image
         # ----------------------------------
         extra = 30 if self.label.flags() & gtk.VISIBLE else 0
-        if self.vimg_mode == NORMAL_WINDOW or adjust:
+        if self.vimg_window_state == NORMAL_WINDOW or adjust:
             self.window.resize(self.img_scaled_width + DEFAULT_MARGIN,
                 self.img_scaled_height + DEFAULT_MARGIN + extra)
 
@@ -399,7 +399,7 @@ class Vimg:
                 self.entry.set_text('')
             if keycode == gtk.keysyms.Escape:
                 self.entry.hide()
-                self.window.set_focus(self.window)
+                #self.window.set_focus(self.window)
             if keycode == gtk.keysyms.Return:
                 self.parse_entry()
         # ======
@@ -413,7 +413,8 @@ class Vimg:
             # NEXT (space, j)
             # ===============
             if (keycode == gtk.keysyms.space) or (
-                    self.vimg_mode == NORMAL_WINDOW and keycode == gtk.keysyms.j):
+                    self.vimg_window_state == NORMAL_WINDOW and \
+                    keycode == gtk.keysyms.j):
                 if self.img_cur_index < len(self.img_paths) -1:
                     self.show_image(self.img_cur_index + 1)
                 else:
@@ -422,22 +423,23 @@ class Vimg:
             # PREVIOUS (backspace, k)
             # =======================
             elif (keycode == gtk.keysyms.BackSpace) or (
-                    self.vimg_mode == NORMAL_WINDOW and keycode == gtk.keysyms.k):
+                    self.vimg_window_state == NORMAL_WINDOW and \
+                    keycode == gtk.keysyms.k):
                 if self.img_cur_index == 0:
                     self.show_image(len(self.img_paths) - 1)
                 else:
                     self.show_image(self.img_cur_index - 1)
-            # =========
-            # FULL MODE
-            # =========
+            # ======================
+            # ENTER/EXIT FULL WINDOW
+            # ======================
             elif keycode == gtk.keysyms.f:
-                if self.vimg_mode != FULL_WINDOW:
-                    self.vimg_mode = FULL_WINDOW
+                if self.vimg_window_state != FULL_WINDOW:
+                    self.vimg_window_state = FULL_WINDOW
                     #self.window.maximize()
                     self.window.fullscreen()
                     self.show_image(self.img_cur_index, adjust=False)
                 else:
-                    self.vimg_mode = NORMAL_WINDOW
+                    self.vimg_window_state = NORMAL_WINDOW
                     #self.window.unmaximize()
                     self.window.unfullscreen()
                     self.show_image(self.img_cur_index, adjust=True)
@@ -468,7 +470,7 @@ class Vimg:
                     self.img_mem_cur_index = len(self.img_mem_indexes) - 1
                     print("[M] Added quick access for image %d." % (
                                                         self.img_cur_index))
-                print(self.img_mem_cur_index)
+                #print(self.img_mem_cur_index)
                 self.set_window_title()
                 self.label.set_text(self.get_image_info())
             # ==============
