@@ -26,15 +26,13 @@
         * Replace environment variables by config file?
 """
 
-import pygtk
-pygtk.require('2.0')
 import gtk
-from optparse import OptionParser
 import os
 import fnmatch
 import sys
 import glib
 import shutil
+from optparse import OptionParser
 
 IMAGE_FORMATS = ('png', 'jpg', 'jpeg', 'gif', 'tif')
 
