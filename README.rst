@@ -20,14 +20,14 @@ Shortcuts:
 
 ::
 
-  j,space        next image
-  k,backspace    previous image
+  Space,j        next image
+  Backspace,k    previous image
   f              enter/exit fullscreen
   i              show/hide info
   m              add/remove image from memory list
   o              next image in memory list
   p              previous image in memory list
-  e              edit with external editor (see 'Setting external editor')
+  e              edit current image with external editor (see below)
   q              quit
   :              enter to command mode
 
@@ -42,12 +42,12 @@ Shortcuts:
 
 ::
 
-  :cp  <target>  copy actual image to directory or filename
+  :cp  <target>  copy current image to directory or filename
   :mcp <target>  copy all images in memory to directory
   :q             quit
   Esc            return to normal mode
 
-**Setting external editor**
+**Setting external editor:**
 
 vimg uses the environment variable ``VIMG_EDITOR`` to set the external editor:
 
