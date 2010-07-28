@@ -33,6 +33,7 @@ import sys
 import glib
 import shutil
 from optparse import OptionParser
+from completer import Completer, COMMANDS
 
 IMAGE_FORMATS = ('png', 'jpg', 'jpeg', 'gif', 'tif')
 
@@ -83,6 +84,10 @@ class Vimg:
         self.img_zoom = 0
         self.img_mem_indexes = []
         self.img_mem_cur_index = -1 # memory empty
+
+        # Command line completer
+        self.completer = Completer(tabkey=gtk.keysyms.Tab,
+                commands=COMMANDS, dotfiles=False)
 
         # ---------------
         # Parse arguments
@@ -383,23 +388,36 @@ class Vimg:
     # }}}
     # {{{ on_key_press(self, widget, event)
     def on_key_press(self, widget, event):
-        #keycode = gtk.gdk.keyval_to_upper(event.keyval)
-        #keycode = gtk.gdk.keyval_name(event.keyval)
         keycode = event.keyval
         #print keycode
+        #print self.entry.flags()
         newx = newy = 0
 
         # =======
         # Command
         # =======
         if self.entry.flags() & gtk.VISIBLE:
+            # Unica forma que encontre para posicionar
+            # el cursor al final del texto
+            self.window.set_focus(self.entry)
+            self.entry.select_region(
+                len(self.entry.get_text()),
+                len(self.entry.get_text())+1)
+
+            if keycode == gtk.keysyms.Tab:
+                self.entry.set_text(
+                    self.completer.complete(self.entry.get_text()))
+                self.window.set_focus(self.entry)
+            if keycode == gtk.keysyms.Return:
+                self.parse_entry()
             if keycode == gtk.keysyms.colon:
                 self.entry.set_text('')
             if keycode == gtk.keysyms.Escape:
                 self.entry.hide()
                 #self.window.set_focus(self.window)
-            if keycode == gtk.keysyms.Return:
-                self.parse_entry()
+
+            # Completer necesita saber si la ultima tecla fue Tab o no.
+            self.completer.set_lastkey(event.keyval)
         # ======
         # Normal
         # ======

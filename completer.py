@@ -7,13 +7,13 @@ import os
 COMMANDS = {
     ':cp'   : True,
     ':mcp'  : True,
-    ':mv'   : True,
-    ':mmv'  : True,
-    ':rm'   : False,
-    ':mrm'  : False,
+    #':mv'   : True,
+    #':mmv'  : True,
+    #':rm'   : False,
+    #':mrm'  : False,
     ':q'    : False,
-    'pyar'  : False,
-    'python': False,
+    #'pyar'  : False,
+    #'python': False,
 }
 
 class Main:
