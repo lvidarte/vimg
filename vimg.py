@@ -5,7 +5,7 @@
     vimg - Simple GTK Image Viewer for shell lovers.
 
     Author:
-        Leonardo Vidarte - http://blog.calcifer.com.ar
+        Leonardo Vidarte - http://calcifer.com.ar
 
     Licence:
         http://www.gnu.org/licenses/gpl.html GNU General Public License
@@ -41,7 +41,7 @@ SCREEN = gtk.gdk.Screen()
 
 DEFAULT_WIDTH = int(SCREEN.get_width() * 0.8) # 80% of screen width
 DEFAULT_HEIGHT = int(SCREEN.get_height() * 0.8) # 80% of screen height
-DEFAULT_MARGIN = 25
+DEFAULT_MARGIN = 2
 BG_COLOR = 6000
 
 OFFSET_GRAL = 25
@@ -189,8 +189,8 @@ class Vimg:
         self.parser = OptionParser(
             prog="vimg",
             description="Simple GTK Image Viewer for shell lovers.",
-            usage="%prog [OPTIONS] FILEPATH",
-            version="%prog 0.0.1"
+            usage="%prog [OPTIONS] [FILEPATH]",
+            version="%prog 0.0.2"
         )
 
         # ----------------
@@ -215,8 +215,7 @@ class Vimg:
         (options, args) = self.parser.parse_args()
 
         if len(args) == 0:
-            self.parser.print_help()
-            sys.exit(1)
+            args.append('.')
 
         return (options, args)
     # }}}
@@ -252,7 +251,7 @@ class Vimg:
         if wildcard:
             return fnmatch.fnmatch(filename, wildcard)
         else:
-            return filename.split('.')[-1] in IMAGE_FORMATS
+            return filename.split('.')[-1].lower() in IMAGE_FORMATS
 
     # }}}
     # {{{ show_image(self, index, adjust=True)
