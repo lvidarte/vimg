@@ -4,11 +4,19 @@
 """ 
     vimg - Simple GTK Image Viewer for shell lovers.
 
-    Author:
-        Leonardo Vidarte - http://calcifer.com.ar
+    vimg is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License version 3
+    as published by the Free Software Foundation.
+    
+    vimg is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+    
+    You should have received a copy of the GNU General Public License
+    along with vimg. If not, see <http://www.gnu.org/licenses/>.
 
-    Licence:
-        http://www.gnu.org/licenses/gpl.html GNU General Public License
+    Author: Leonardo Vidarte - http://calcifer.com.ar
 
     Thanks to:
         * Marcelo Fidel Fernández - http://www.marcelofernandez.info
@@ -16,14 +24,10 @@
 
     TODO: 
         * Diferent levels of zoom
-        * Copy actual image (:cp) @done
-        * Copy images in memory (:mcp) @done
         * Move, Delete images in memory list.
         * No-verbose option.
-        * Navigate mode for (only) saved images [op] @done
-        * Simple save access (in the next available position) with key [m]. @done
-        * Replace keys by gtk.keysyms @done
         * Replace environment variables by config file?
+
 """
 
 import gtk

@@ -7,11 +7,12 @@ Common use:
 
 ::
 
+  vimg                        # view all images in current dir
   vimg image.png              # view just image.png
-  vimg ~/Images               # view all images in ~/Images
-  vimg -r ~/Images            # view recursively all images in ~/Images
-  vimg -w '*.png' ~/Images    # view all png images in ~/Images
-  vimg -rw '*.png' ~/Images   # view recursively all png images in ~/Images
+  vimg /dir                   # view all images in /dir
+  vimg -r /dir                # view recursively all images in /dir
+  vimg -w '*.png' /dir        # view all png images in /dir
+  vimg -rw '*.png' /dir       # view recursively all png images in /dir
 
 Shortcuts:
 ----------
@@ -22,16 +23,18 @@ Shortcuts:
 
   Space,j        next image
   Backspace,k    previous image
-  f              enter/exit fullscreen
   i              show/hide info
   m              add/remove image from memory list
   o              next image in memory list
   p              previous image in memory list
   e              edit current image with external editor (see below)
   q              quit
+  f              enter/exit fullscreen mode
   :              enter to command mode
 
-  Only in fullscreen:
+**Fullscreen Mode:**
+
+::
 
   j              scroll down
   k              scroll up
