@@ -7,12 +7,11 @@ Common use:
 
 ::
 
-  vimg                        # view all images in current dir
-  vimg image.png              # view just image.png
-  vimg /dir                   # view all images in /dir
-  vimg -r /dir                # view recursively all images in /dir
-  vimg -w '*.png' /dir        # view all png images in /dir
-  vimg -rw '*.png' /dir       # view recursively all png images in /dir
+  vimg                    # view all images in current dir
+  vimg image.png          # view just image.png
+  vimg dir/*.png          # view all png images in dir
+  vimg dir                # view all images in dir
+  vimg -r dir             # view recursively all images in dir
 
 Shortcuts:
 ----------
