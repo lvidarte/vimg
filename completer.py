@@ -18,7 +18,7 @@
     You should have received a copy of the GNU General Public License
     along with vimg. If not, see <http://www.gnu.org/licenses/>.
 
-    Author: Leonardo Vidarte - http://calcifer.com.ar
+    Author: Leonardo Vidarte <http://nerdlabs.com.ar>
 
 """ 
 
